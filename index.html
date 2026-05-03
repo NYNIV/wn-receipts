@@ -1,0 +1,676 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="theme-color" content="#0f0f0f">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="WN Receipts">
+<link rel="manifest" href="manifest.json">
+<title>Whatnot Receipt Generator</title>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0f0f0f;
+    --surface: #1a1a1a;
+    --surface2: #212121;
+    --border: #2a2a2a;
+    --accent: #f5c842;
+    --accent2: #e87c3e;
+    --text: #e8e8e8;
+    --muted: #777;
+    --success: #4caf78;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: var(--bg); color: var(--text); font-family: 'IBM Plex Mono', monospace; font-size: 13px; min-height: 100vh; }
+  #app { max-width: 980px; margin: 0 auto; padding: 28px 20px 60px; }
+
+  header { display: flex; align-items: baseline; gap: 14px; margin-bottom: 28px; border-bottom: 1px solid var(--border); padding-bottom: 18px; }
+  header h1 { font-size: 18px; font-weight: 700; color: var(--accent); letter-spacing: -0.5px; }
+  header span { font-size: 10px; color: var(--muted); text-transform: uppercase; letter-spacing: 1.5px; }
+
+  .steps { display: flex; gap: 6px; margin-bottom: 26px; }
+  .step { font-size: 10px; padding: 4px 10px; border-radius: 3px; border: 1px solid var(--border); color: var(--muted); text-transform: uppercase; letter-spacing: 0.5px; transition: all 0.2s; }
+  .step.active { border-color: var(--accent); color: var(--accent); background: rgba(245,200,66,0.07); }
+  .step.done   { border-color: var(--success); color: var(--success); background: rgba(76,175,120,0.06); }
+
+  #drop-zone {
+    border: 2px dashed var(--border); border-radius: 8px; padding: 52px 32px;
+    text-align: center; cursor: pointer; transition: all 0.2s; position: relative;
+  }
+  #drop-zone:hover, #drop-zone.over { border-color: var(--accent); background: rgba(245,200,66,0.03); }
+  #drop-zone input { position: absolute; inset: 0; opacity: 0; cursor: pointer; width: 100%; height: 100%; }
+  #drop-zone .icon { font-size: 32px; margin-bottom: 10px; display: block; }
+  #drop-zone h2 { font-size: 14px; font-weight: 700; margin-bottom: 6px; }
+  #drop-zone p  { font-size: 11px; color: var(--muted); }
+  #drop-zone .hint { margin-top: 12px; font-size: 10px; color: var(--accent2); }
+
+  #buyer-bar { display: none; background: var(--surface); border: 1px solid var(--border); border-radius: 7px; padding: 14px 16px; margin-bottom: 20px; }
+  .buyer-bar-inner { display: flex; gap: 12px; align-items: flex-end; flex-wrap: wrap; }
+  .field-grp { display: flex; flex-direction: column; gap: 4px; flex: 1; min-width: 140px; }
+  .field-grp label { font-size: 9px; text-transform: uppercase; letter-spacing: 1px; color: var(--muted); }
+  .field-grp input { background: var(--bg); border: 1px solid var(--border); border-radius: 5px; color: var(--text); font-family: 'IBM Plex Mono', monospace; font-size: 12px; padding: 7px 10px; }
+  .field-grp input:focus { outline: 1px solid var(--accent); }
+
+  .controls { display: flex; align-items: center; gap: 10px; margin-bottom: 12px; flex-wrap: wrap; }
+  .controls input[type=text], .controls select { background: var(--surface); border: 1px solid var(--border); border-radius: 6px; color: var(--text); font-family: 'IBM Plex Mono', monospace; font-size: 11px; padding: 7px 10px; }
+  .controls input[type=text] { flex: 1; min-width: 180px; }
+  .controls input[type=text]::placeholder { color: var(--muted); }
+  .controls input[type=text]:focus, .controls select:focus { outline: 1px solid var(--accent); }
+
+  .btn { font-family: 'IBM Plex Mono', monospace; font-size: 11px; font-weight: 700; padding: 7px 14px; border-radius: 5px; border: none; cursor: pointer; transition: opacity 0.15s, transform 0.1s; text-transform: uppercase; letter-spacing: 0.5px; white-space: nowrap; }
+  .btn:hover { opacity: 0.85; } .btn:active { transform: scale(0.97); }
+  .btn-primary { background: var(--accent); color: #111; }
+  .btn-ghost   { background: transparent; color: var(--muted); border: 1px solid var(--border); }
+
+  .stats-bar { display: flex; gap: 10px; margin-bottom: 16px; flex-wrap: wrap; }
+  .stat { background: var(--surface); border: 1px solid var(--border); border-radius: 5px; padding: 8px 14px; }
+  .stat-val { font-size: 15px; font-weight: 700; color: var(--accent); }
+  .stat-lbl { font-size: 8px; text-transform: uppercase; letter-spacing: 1px; color: var(--muted); margin-top: 1px; }
+
+  #items-section { display: none; }
+  .section-lbl { font-size: 10px; text-transform: uppercase; letter-spacing: 1.5px; color: var(--muted); margin-bottom: 12px; }
+  .sel-bar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; flex-wrap: wrap; gap: 8px; }
+  .sel-count  { font-size: 11px; color: var(--accent); background: rgba(245,200,66,0.1); padding: 3px 10px; border-radius: 3px; }
+  .slip-badge { font-size: 9px; padding: 2px 7px; border-radius: 3px; background: rgba(245,200,66,0.1); color: var(--accent); border: 1px solid rgba(245,200,66,0.2); white-space: nowrap; }
+
+  .tbl { width: 100%; border-collapse: collapse; font-size: 11.5px; }
+  .tbl th { font-size: 9px; text-transform: uppercase; letter-spacing: 1px; color: var(--muted); text-align: left; padding: 7px 8px; border-bottom: 1px solid var(--border); }
+  .tbl td { padding: 9px 8px; border-bottom: 1px solid #1c1c1c; vertical-align: middle; }
+  .tbl tr:hover td { background: rgba(255,255,255,0.015); }
+  .tbl tr.sel td { background: rgba(245,200,66,0.04); }
+  .tbl tr.group-hdr td { background: var(--surface2); color: var(--accent2); font-size: 9.5px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.8px; padding: 6px 8px; border-top: 1px solid var(--border); }
+
+  .cb { width: 14px; height: 14px; accent-color: var(--accent); cursor: pointer; }
+  .tag { font-size: 9px; padding: 2px 6px; border-radius: 2px; background: var(--surface2); border: 1px solid var(--border); color: var(--muted); }
+  .tag.processing { border-color: #e87c3e55; color: var(--accent2); background: rgba(232,124,62,0.08); }
+  .tag.completed  { border-color: #4caf7855; color: var(--success); background: rgba(76,175,120,0.08); }
+  .item-title { font-weight: 600; color: var(--text); font-size: 11px; line-height: 1.3; max-width: 220px; }
+
+  #preview-section { display: none; }
+  .preview-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; flex-wrap: wrap; gap: 10px; }
+  .print-hint { font-size: 10px; color: var(--muted); margin-bottom: 18px; }
+  .slips-grid { display: flex; flex-direction: column; gap: 24px; align-items: center; }
+
+  .slip-card { background: #fff; width: 384px; border-radius: 3px; box-shadow: 0 6px 24px rgba(0,0,0,0.45); overflow: hidden; transition: box-shadow 0.2s; }
+  .slip-card:hover { box-shadow: 0 8px 32px rgba(245,200,66,0.2); }
+
+  /* ── THE SLIP ── */
+  .slip { width: 384px; padding: 8px 10px 8px; color: #111; font-family: 'IBM Plex Mono', monospace; font-size: 11px; line-height: 1.3; background: #fff; }
+  .s-header { display: flex; justify-content: space-between; align-items: flex-start; border-bottom: 2px solid #111; padding-bottom: 5px; margin-bottom: 5px; }
+  .s-brand { font-size: 15px; font-weight: 700; letter-spacing: -0.5px; line-height: 1.1; }
+  .s-brand span { color: #e87c3e; }
+  .s-brand-sub { font-size: 9px; color: #111; margin-top: 1px; }
+  .s-meta { text-align: right; font-size: 9px; color: #111; line-height: 1.5; }
+  .s-parties { display: flex; gap: 8px; border-bottom: 1px dashed #aaa; padding-bottom: 3px; margin-bottom: 4px; align-items: baseline; flex-wrap: wrap; }
+  .s-party { display: flex; align-items: baseline; gap: 5px; flex: 1; min-width: 0; }
+  .s-lbl  { font-size: 9px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; color: #111; white-space: nowrap; }
+  .s-name { font-size: 11px; font-weight: 700; line-height: 1.2; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .s-sub  { display: none; }
+  .s-item { border: 1px solid #bbb; border-top: none; border-radius: 0; padding: 4px 6px; margin-bottom: 0; }
+  .s-item-top { display: flex; justify-content: space-between; gap: 4px; margin-bottom: 2px; }
+  .s-item-title { font-size: 10px; font-weight: 700; flex: 1; line-height: 1.25; }
+  .s-item-date  { font-size: 9px; color: #111; white-space: nowrap; }
+  .s-item-refs  { display: flex; gap: 8px; margin-bottom: 3px; padding-bottom: 3px; border-bottom: 1px dotted #ccc; }
+  .s-ref { font-size: 9px; color: #111; }
+  .s-ref strong { color: #111; }
+  .s-line { display: flex; justify-content: space-between; padding: 1px 0; font-size: 10px; color: #111; }
+  .s-line.dim   { color: #111; }
+  .s-line.sub   { font-weight: 700; font-size: 10.5px; color: #111; border-top: 1px solid #ccc; margin-top: 2px; padding-top: 2px; }
+  .s-line.fee   { color: #333; font-style: italic; font-size: 9.5px; }
+  .s-line.basis { font-weight: 700; font-size: 11px; color: #111; border-top: 1.5px solid #888; margin-top: 3px; padding-top: 3px; }
+  .s-sep { display: none; }
+  .s-items-wrap { border: 1px solid #bbb; border-radius: 2px; margin-bottom: 4px; overflow: hidden; }
+  .s-grand { border-top: 2px solid #111; padding-top: 5px; margin-top: 2px; }
+  .s-grand-lbl { font-size: 8px; text-transform: uppercase; letter-spacing: 1px; color: #111; margin-bottom: 3px; }
+  .s-grand-final { display: flex; justify-content: space-between; align-items: baseline; border-top: 2px solid #111; margin-top: 4px; padding-top: 4px; }
+  .s-grand-final-lbl { font-size: 9px; text-transform: uppercase; letter-spacing: 1px; font-weight: 700; line-height: 1.4; }
+  .s-grand-final-amt { font-size: 19px; font-weight: 700; }
+  .s-footer { border-top: 1px dashed #ccc; margin-top: 5px; padding-top: 4px; font-size: 8px; color: #333; text-align: center; }
+
+  hr.div { border: none; border-top: 1px solid var(--border); margin: 28px 0; }
+
+  /* Slip checkbox control bar */
+  .slip-wrapper { display: flex; flex-direction: column; align-items: center; gap: 0; }
+  .slip-ctrl {
+    width: 384px; background: var(--surface2); border: 1px solid var(--border);
+    border-bottom: none; border-radius: 5px 5px 0 0;
+    display: flex; align-items: center; gap: 10px; padding: 7px 12px;
+    transition: background 0.15s;
+  }
+  .slip-ctrl.checked { background: rgba(245,200,66,0.1); border-color: rgba(245,200,66,0.3); }
+  .slip-ctrl input[type=checkbox] { width: 15px; height: 15px; accent-color: var(--accent); cursor: pointer; flex-shrink: 0; }
+  .slip-ctrl-label { font-size: 10px; color: var(--muted); flex: 1; }
+  .slip-ctrl.checked .slip-ctrl-label { color: var(--accent); }
+  .slip-ctrl .slip-ctrl-dim { font-size: 9px; color: #444; }
+  .slip-card { border-radius: 0 0 3px 3px; }
+  .slip-card.excluded { opacity: 0.35; filter: grayscale(0.5); }
+
+  @page {
+    size: 101.6mm 152.4mm;
+    margin: 0mm;
+  }
+
+  @media print {
+    html, body { margin: 0 !important; padding: 0 !important; background: #fff; }
+    #app { display: none !important; }
+    #print-target {
+      display: block !important;
+      position: absolute;
+      top: 0; left: 0;
+      margin: 0 !important;
+      padding: 0 !important;
+    }
+    .slip-card {
+      page-break-after: always;
+      page-break-inside: avoid;
+      box-shadow: none;
+      border-radius: 0;
+      margin: 0 !important;
+      padding: 0 !important;
+      width: 101.6mm;
+    }
+    .slip {
+      width: 101.6mm;
+      margin: 0 !important;
+      padding: 3mm 4mm !important;
+    }
+    .no-print { display: none !important; }
+  }
+
+  /* ── TABLET / RESPONSIVE ── */
+  @media (max-width: 600px) {
+    #app { padding: 16px 12px 40px; }
+    header h1 { font-size: 15px; }
+    .stats-bar { gap: 6px; }
+    .stat { padding: 6px 10px; }
+    .stat-val { font-size: 13px; }
+    .tbl th, .tbl td { padding: 8px 5px; font-size: 10px; }
+    .item-title { max-width: 140px; font-size: 10px; }
+    .controls { gap: 6px; }
+    .btn { padding: 10px 12px; font-size: 11px; }
+    #drop-zone { padding: 36px 20px; }
+    .buyer-bar-inner { flex-direction: column; }
+    .field-grp { min-width: 100%; }
+  }
+
+  @media (min-width: 601px) and (max-width: 1024px) {
+    #app { max-width: 100%; padding: 20px 16px 40px; }
+    .tbl th, .tbl td { padding: 10px 6px; }
+    .item-title { max-width: 180px; }
+    .btn { padding: 10px 14px; font-size: 12px; }
+    .cb { width: 18px; height: 18px; }
+    .slip-ctrl input[type=checkbox] { width: 20px; height: 20px; }
+    /* Larger touch targets */
+    .controls input[type=text], .controls select { padding: 10px 12px; font-size: 13px; }
+    .field-grp input { padding: 10px 12px; font-size: 13px; }
+  }
+
+  /* Safe area for notched Android devices */
+  @supports (padding: env(safe-area-inset-top)) {
+    #app { padding-top: max(20px, env(safe-area-inset-top)); }
+  }
+</style>
+</head>
+<body>
+<div id="app">
+
+  <header>
+    <h1>⌚ WHATNOT RECEIPT GEN</h1>
+    <span>Buyer Record · One Slip Per Seller Per Date · 4" Thermal</span>
+  </header>
+
+  <div class="steps">
+    <div class="step active" id="s1">① Upload</div>
+    <div class="step" id="s2">② Select</div>
+    <div class="step" id="s3">③ Print</div>
+  </div>
+
+  <div id="upload-section">
+    <div id="drop-zone">
+      <input type="file" id="csv-input" accept=".csv">
+      <span class="icon">📂</span>
+      <h2>Drop your Whatnot order CSV here</h2>
+      <p>or click to browse</p>
+      <div class="hint">order-report-*.csv · one slip per seller per purchase date</div>
+    </div>
+  </div>
+
+  <div id="buyer-bar">
+    <div style="font-size:9px;text-transform:uppercase;letter-spacing:1.2px;color:var(--muted);margin-bottom:10px;">Your Info — appears on every slip</div>
+    <div class="buyer-bar-inner">
+      <div class="field-grp">
+        <label>Your Name / Handle</label>
+        <input type="text" id="buyer-name" value="nyniv">
+      </div>
+      <div class="field-grp">
+        <label>Whatnot Username</label>
+        <input type="text" id="buyer-handle" value="@nyniv">
+      </div>
+      <div class="field-grp" style="flex:2">
+        <label>Footer Note</label>
+        <input type="text" id="buyer-note" placeholder="Whatnot buyer receipt · Self-generated · Not an official document">
+      </div>
+    </div>
+  </div>
+
+  <div id="items-section">
+    <hr class="div" style="margin-top:0">
+    <div class="stats-bar" id="stats-bar"></div>
+
+    <div class="controls">
+      <input type="text" id="search" placeholder="Search item, seller, order ID…">
+      <select id="filter-seller"><option value="">All Sellers</option></select>
+      <select id="filter-date"><option value="">All Dates</option></select>
+      <button class="btn btn-ghost" id="sel-all-btn">Select All</button>
+      <button class="btn btn-ghost" id="desel-all-btn">Deselect All</button>
+    </div>
+
+    <div class="sel-bar">
+      <div style="display:flex;align-items:center;gap:10px;">
+        <span class="section-lbl" style="margin:0">Imported Orders</span>
+        <span class="sel-count" id="sel-count">0 selected</span>
+        <span class="slip-badge" id="slip-count">0 slips</span>
+      </div>
+      <button class="btn btn-primary" id="gen-btn">Generate Slips →</button>
+    </div>
+
+    <table class="tbl">
+      <thead>
+        <tr>
+          <th></th><th>Date</th><th>Item</th><th>Order #</th>
+          <th>Sale</th><th>Ship</th><th>Tax</th><th>Cost Basis</th><th>Status</th>
+        </tr>
+      </thead>
+      <tbody id="tbl-body"></tbody>
+    </table>
+  </div>
+
+  <div id="preview-section">
+    <hr class="div">
+    <div class="preview-header no-print">
+      <div style="display:flex;align-items:center;gap:12px;">
+        <span class="section-lbl" style="margin:0">Packing Slips</span>
+        <span class="slip-badge" id="preview-count"></span>
+        <span class="slip-badge" id="preview-checked-count" style="color:var(--success);border-color:rgba(76,175,120,0.3);background:rgba(76,175,120,0.08)"></span>
+      </div>
+      <div style="display:flex;gap:8px;">
+        <button class="btn btn-ghost no-print" id="slips-sel-all-btn">Check All</button>
+        <button class="btn btn-ghost no-print" id="slips-desel-all-btn">Uncheck All</button>
+        <button class="btn btn-ghost no-print" id="back-btn">← Back</button>
+        <button class="btn btn-primary no-print" id="print-btn">🖨 Print Checked</button>
+      </div>
+    </div>
+    <p class="print-hint no-print">Check slips to include · Print settings: Paper = 4×6" · Margins = None · Scale = 100% · Portrait</p>
+    <div class="slips-grid" id="slips-grid"></div>
+  </div>
+
+</div>
+<div id="print-target" style="display:none"></div>
+
+<script>
+const FEE = 0.13;
+let allItems = [], filtered = [], selected = new Set();
+
+// Upload
+const dz = document.getElementById('drop-zone');
+const fi = document.getElementById('csv-input');
+dz.addEventListener('dragover',  e => { e.preventDefault(); dz.classList.add('over'); });
+dz.addEventListener('dragleave', () => dz.classList.remove('over'));
+dz.addEventListener('drop', e => { e.preventDefault(); dz.classList.remove('over'); load(e.dataTransfer.files[0]); });
+fi.addEventListener('change', e => load(e.target.files[0]));
+
+function load(f) { if (!f) return; const r = new FileReader(); r.onload = e => ingest(e.target.result); r.readAsText(f); }
+
+function ingest(text) {
+  const rows = splitCSV(text);
+  if (rows.length < 2) return alert('No data found.');
+  const hdr = rows[0].map(h => h.trim().toLowerCase());
+  const c = (row, name) => { const i = hdr.indexOf(name); return i >= 0 ? (row[i]||'').trim() : ''; };
+
+  allItems = rows.slice(1).filter(r => r.length > 3 && c(r,'product name')).map((row, i) => {
+    const sale = pm(c(row,'sold price')), ship = pm(c(row,'shipping price')), tax = pm(c(row,'taxes'));
+    const sub  = r2(sale + ship + tax), fee = r2(sale * FEE), basis = r2(sub + fee);
+    const rawDate = c(row,'processed date'), dateKey = rawDate.substring(0,10);
+    const seller  = c(row,'seller');
+    return { id:i, orderId:c(row,'order id'), orderNum:c(row,'order numeric id'),
+             buyer:c(row,'buyer'), seller, name:c(row,'product name'),
+             rawDate, dateKey, dateDisplay:fmtDate(rawDate), status:c(row,'order status'),
+             sale, ship, tax, sub, fee, basis, groupKey: seller+'||'+dateKey };
+  });
+
+  if (!allItems.length) return alert('Could not parse items.');
+  filtered = [...allItems];
+  selected = new Set(allItems.map(i => i.id));
+  buildFilters(); renderStats(); renderTable();
+  document.getElementById('buyer-bar').style.display = 'block';
+  document.getElementById('items-section').style.display = 'block';
+  setStep(2);
+}
+
+function buildFilters() {
+  const sellers = [...new Set(allItems.map(i => i.seller))].sort();
+  const dates   = [...new Set(allItems.map(i => i.dateKey))].sort().reverse();
+  document.getElementById('filter-seller').innerHTML =
+    '<option value="">All Sellers</option>' + sellers.map(s=>`<option value="${s}">@${s}</option>`).join('');
+  document.getElementById('filter-date').innerHTML =
+    '<option value="">All Dates</option>' + dates.map(d=>`<option value="${d}">${fmtDate(d+'T00:00')}</option>`).join('');
+}
+
+document.getElementById('search').addEventListener('input', applyFilters);
+document.getElementById('filter-seller').addEventListener('change', applyFilters);
+document.getElementById('filter-date').addEventListener('change', applyFilters);
+
+function applyFilters() {
+  const q = document.getElementById('search').value.toLowerCase();
+  const s = document.getElementById('filter-seller').value;
+  const d = document.getElementById('filter-date').value;
+  filtered = allItems.filter(i => {
+    const mQ = !q || [i.name,i.seller,i.orderNum,i.orderId].some(v=>v.toLowerCase().includes(q));
+    return mQ && (!s||i.seller===s) && (!d||i.dateKey===d);
+  });
+  renderTable();
+}
+
+function renderStats() {
+  const items = allItems.filter(i => selected.has(i.id));
+  const slips = new Set(items.map(i=>i.groupKey)).size;
+  document.getElementById('stats-bar').innerHTML = `
+    <div class="stat"><div class="stat-val">${items.length}</div><div class="stat-lbl">Items</div></div>
+    <div class="stat"><div class="stat-val">${slips}</div><div class="stat-lbl">Slips</div></div>
+    <div class="stat"><div class="stat-val">${new Set(items.map(i=>i.seller)).size}</div><div class="stat-lbl">Sellers</div></div>
+    <div class="stat"><div class="stat-val">${fmt(sum(items,'sale'))}</div><div class="stat-lbl">Total Sale</div></div>
+    <div class="stat"><div class="stat-val">${fmt(sum(items,'ship'))}</div><div class="stat-lbl">Total Ship</div></div>
+    <div class="stat"><div class="stat-val">${fmt(sum(items,'tax'))}</div><div class="stat-lbl">Total Tax</div></div>
+    <div class="stat"><div class="stat-val" style="color:var(--accent2)">${fmt(sum(items,'fee'))}</div><div class="stat-lbl">Est. WN Fees</div></div>
+    <div class="stat"><div class="stat-val" style="color:var(--accent)">${fmt(sum(items,'basis'))}</div><div class="stat-lbl">True Cost Basis</div></div>
+  `;
+  const sc = document.getElementById('slip-count');
+  if (sc) sc.textContent = slips + ' slip' + (slips!==1?'s':'');
+}
+
+function renderTable() {
+  const tbody = document.getElementById('tbl-body');
+  tbody.innerHTML = '';
+  const sorted = [...filtered].sort((a,b) => {
+    if (a.seller !== b.seller) return a.seller.localeCompare(b.seller);
+    return b.dateKey.localeCompare(a.dateKey);
+  });
+  let lastGroup = null;
+  sorted.forEach(item => {
+    if (item.groupKey !== lastGroup) {
+      lastGroup = item.groupKey;
+      const gi = allItems.filter(i=>i.groupKey===item.groupKey);
+      const sel = gi.filter(i=>selected.has(i.id)).length;
+      const allGroupSelected = gi.every(i => selected.has(i.id));
+      const tr = document.createElement('tr');
+      tr.className = 'group-hdr';
+      tr.dataset.groupKey = item.groupKey;
+      tr.innerHTML = `
+        <td style="padding:6px 8px;">
+          <input type="checkbox" class="cb group-master-cb" data-group-key="${esc(item.groupKey)}" ${allGroupSelected ? 'checked' : ''} title="Select/deselect all items from this seller+date">
+        </td>
+        <td colspan="8">@${esc(item.seller)} &nbsp;·&nbsp; ${item.dateDisplay} &nbsp;<span style="color:var(--muted);font-weight:400">${gi.length} item${gi.length!==1?'s':''} · ${sel} selected · ${new Set(gi.map(i=>i.groupKey)).size} slip</span></td>
+      `;
+      // Master checkbox handler
+      tr.querySelector('.group-master-cb').addEventListener('change', e => {
+        const gKey = e.target.dataset.groupKey;
+        const groupItems = allItems.filter(i => i.groupKey === gKey);
+        groupItems.forEach(i => { if (e.target.checked) selected.add(i.id); else selected.delete(i.id); });
+        renderTable(); renderStats();
+      });
+      tbody.appendChild(tr);
+    }
+    const chk = selected.has(item.id);
+    const tr = document.createElement('tr');
+    tr.className = chk ? 'sel' : '';
+    tr.innerHTML = `
+      <td><input type="checkbox" class="cb" data-id="${item.id}" ${chk?'checked':''}></td>
+      <td style="white-space:nowrap;font-size:10px;color:var(--muted)">${item.dateDisplay}</td>
+      <td><div class="item-title">${esc(item.name)}</div></td>
+      <td style="font-size:9.5px;color:var(--muted)">${esc(item.orderNum)}</td>
+      <td style="color:var(--success);font-family:'IBM Plex Mono',monospace">${fmt(item.sale)}</td>
+      <td style="color:var(--muted);font-family:'IBM Plex Mono',monospace">${fmt(item.ship)}</td>
+      <td style="color:var(--muted);font-family:'IBM Plex Mono',monospace">${fmt(item.tax)}</td>
+      <td style="color:var(--accent);font-weight:700;font-family:'IBM Plex Mono',monospace">${fmt(item.basis)}</td>
+      <td><span class="tag ${item.status}">${item.status}</span></td>
+    `;
+    tr.querySelector('.cb').addEventListener('change', e => {
+      const id = +e.target.dataset.id;
+      if (e.target.checked) selected.add(id); else selected.delete(id);
+      tr.className = e.target.checked ? 'sel' : '';
+      updateCount(); renderStats();
+    });
+    tbody.appendChild(tr);
+  });
+  updateCount();
+}
+
+function updateCount() {
+  const items = allItems.filter(i=>selected.has(i.id));
+  const slips = new Set(items.map(i=>i.groupKey)).size;
+  document.getElementById('sel-count').textContent = `${items.length} selected`;
+  const sc = document.getElementById('slip-count');
+  if (sc) sc.textContent = slips + ' slip' + (slips!==1?'s':'');
+}
+
+document.getElementById('sel-all-btn').addEventListener('click', () => { filtered.forEach(i=>selected.add(i.id)); renderTable(); renderStats(); });
+document.getElementById('desel-all-btn').addEventListener('click', () => { filtered.forEach(i=>selected.delete(i.id)); renderTable(); renderStats(); });
+
+document.getElementById('gen-btn').addEventListener('click', () => {
+  const items = allItems.filter(i=>selected.has(i.id));
+  if (!items.length) return alert('Select at least one item.');
+
+  const groups = {};
+  items.forEach(item => {
+    if (!groups[item.groupKey]) groups[item.groupKey] = { seller:item.seller, date:item.dateDisplay, dateKey:item.dateKey, items:[] };
+    groups[item.groupKey].items.push(item);
+  });
+
+  const sortedGroups = Object.values(groups).sort((a,b) =>
+    b.dateKey!==a.dateKey ? b.dateKey.localeCompare(a.dateKey) : a.seller.localeCompare(b.seller)
+  );
+
+  const buyerName   = document.getElementById('buyer-name').value   || 'nyniv';
+  const buyerHandle = document.getElementById('buyer-handle').value  || '@nyniv';
+  const buyerNote   = document.getElementById('buyer-note').value    || 'Whatnot buyer receipt · Self-generated · Not an official document';
+  const today = new Date().toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'});
+
+  const grid = document.getElementById('slips-grid');
+  const pt   = document.getElementById('print-target');
+  grid.innerHTML = ''; pt.innerHTML = '';
+
+  sortedGroups.forEach((group, idx) => {
+    const slipHtml = buildSlip(group, buyerName, buyerHandle, buyerNote, today);
+    const slipId = 'slip-' + idx;
+
+    // Screen: wrapper with checkbox control bar above the card
+    const wrapper = document.createElement('div');
+    wrapper.className = 'slip-wrapper no-print';
+    wrapper.dataset.slipId = slipId;
+
+    const ctrl = document.createElement('div');
+    ctrl.className = 'slip-ctrl checked';
+    ctrl.innerHTML = `
+      <input type="checkbox" checked data-slip-id="${slipId}">
+      <span class="slip-ctrl-label">@${esc(group.seller)} · ${esc(group.date)}</span>
+      <span class="slip-ctrl-dim">${group.items.length} item${group.items.length!==1?'s':''}</span>
+    `;
+
+    const card = document.createElement('div');
+    card.className = 'slip-card';
+    card.id = slipId;
+    card.innerHTML = slipHtml;
+
+    ctrl.querySelector('input').addEventListener('change', e => {
+      const checked = e.target.checked;
+      ctrl.classList.toggle('checked', checked);
+      card.classList.toggle('excluded', !checked);
+      updatePrintTarget();
+      updatePreviewCount();
+    });
+
+    wrapper.appendChild(ctrl);
+    wrapper.appendChild(card);
+    grid.appendChild(wrapper);
+  });
+
+  updatePrintTarget();
+
+  const pc = document.getElementById('preview-count');
+  if (pc) pc.textContent = sortedGroups.length + ' slip' + (sortedGroups.length!==1?'s':'');
+  updatePreviewCount();
+  document.getElementById('preview-section').style.display = 'block';
+  document.getElementById('preview-section').scrollIntoView({behavior:'smooth'});
+  setStep(3);
+});
+
+function updatePrintTarget() {
+  const pt = document.getElementById('print-target');
+  pt.innerHTML = '';
+  document.querySelectorAll('.slip-ctrl input[type=checkbox]').forEach(cb => {
+    if (cb.checked) {
+      const slipId = cb.dataset.slipId;
+      const card = document.getElementById(slipId);
+      if (card) {
+        const clone = document.createElement('div');
+        clone.className = 'slip-card';
+        clone.innerHTML = card.innerHTML;
+        pt.appendChild(clone);
+      }
+    }
+  });
+}
+
+function updatePreviewCount() {
+  const total   = document.querySelectorAll('.slip-ctrl input[type=checkbox]').length;
+  const checked = document.querySelectorAll('.slip-ctrl input[type=checkbox]:checked').length;
+  const cc = document.getElementById('preview-checked-count');
+  if (cc) cc.textContent = checked + ' of ' + total + ' to print';
+}
+
+document.getElementById('slips-sel-all-btn').addEventListener('click', () => {
+  document.querySelectorAll('.slip-ctrl input[type=checkbox]').forEach(cb => {
+    cb.checked = true;
+    cb.closest('.slip-ctrl').classList.add('checked');
+    document.getElementById(cb.dataset.slipId).classList.remove('excluded');
+  });
+  updatePrintTarget(); updatePreviewCount();
+});
+
+document.getElementById('slips-desel-all-btn').addEventListener('click', () => {
+  document.querySelectorAll('.slip-ctrl input[type=checkbox]').forEach(cb => {
+    cb.checked = false;
+    cb.closest('.slip-ctrl').classList.remove('checked');
+    document.getElementById(cb.dataset.slipId).classList.add('excluded');
+  });
+  updatePrintTarget(); updatePreviewCount();
+});
+
+function buildSlip(group, buyerName, buyerHandle, buyerNote, today) {
+  const { seller, date, items } = group;
+  const gSale = sum(items,'sale'), gShip = sum(items,'ship'), gTax = sum(items,'tax');
+  const gSub  = sum(items,'sub'),  gFee  = r2(gSale*FEE),    gBasis = r2(gSub+gFee);
+
+  const blocks = items.map((item,idx) => `
+    <div class="s-item">
+      <div class="s-item-top">
+        <div class="s-item-title">${esc(item.name)}</div>
+        <div class="s-item-date">${item.dateDisplay}</div>
+      </div>
+      <div class="s-item-refs">
+        <div class="s-ref">ITEM <strong>#${esc(item.orderNum)}</strong></div>
+        <div class="s-ref">ORDER <strong>${esc(item.orderId.substring(0,14))}…</strong></div>
+      </div>
+      <div class="s-line"><span>Sale Amount</span><span>${fmt(item.sale)}</span></div>
+      <div class="s-line dim"><span>Shipping Paid</span><span>${fmt(item.ship)}</span></div>
+      <div class="s-line dim"><span>Tax Paid</span><span>${fmt(item.tax)}</span></div>
+      <div class="s-line sub"><span>Item Subtotal</span><span>${fmt(item.sub)}</span></div>
+      <div class="s-line fee"><span>+ Est. WN Fee (13% of ${fmt(item.sale)})</span><span>${fmt(item.fee)}</span></div>
+      <div class="s-line basis"><span>True Cost Basis</span><span>${fmt(item.basis)}</span></div>
+    </div>
+  `).join('');
+
+  return `<div class="slip">
+    <div class="s-header">
+      <div>
+        <div class="s-brand">WHAT<span>NOT</span></div>
+        <div class="s-brand-sub">Purchase Receipt · Buyer Generated</div>
+      </div>
+      <div class="s-meta">${esc(date)}<br>${items.length} ITEM${items.length!==1?'S':''}<br>PRINTED ${today}</div>
+    </div>
+    <div class="s-parties">
+      <div class="s-party">
+        <div class="s-lbl">Buyer:</div>
+        <div class="s-name">${esc(buyerName)}</div>
+      </div>
+      <div class="s-party">
+        <div class="s-lbl">Seller:</div>
+        <div class="s-name">@${esc(seller)}</div>
+      </div>
+    </div>
+    <div class="s-items-wrap">${blocks}</div>
+    <div class="s-grand">
+      <div class="s-grand-lbl">Session Summary — @${esc(seller)} · ${esc(date)}</div>
+      <div class="s-line"><span>Total Sales Amount</span><span>${fmt(gSale)}</span></div>
+      <div class="s-line dim"><span>Total Shipping Paid</span><span>${fmt(gShip)}</span></div>
+      <div class="s-line dim"><span>Total Tax Paid</span><span>${fmt(gTax)}</span></div>
+      <div class="s-line sub"><span>Total Subtotal</span><span>${fmt(gSub)}</span></div>
+      <div class="s-line fee"><span>+ Est. Total WN Fees (13% of ${fmt(gSale)})</span><span>${fmt(gFee)}</span></div>
+      <div class="s-grand-final">
+        <div class="s-grand-final-lbl">Grand Total<br>True Cost Basis</div>
+        <div class="s-grand-final-amt">${fmt(gBasis)}</div>
+      </div>
+    </div>
+    <div class="s-footer">${esc(buyerNote)}</div>
+  </div>`;
+}
+
+document.getElementById('print-btn').addEventListener('click', () => {
+  const checked = document.querySelectorAll('.slip-ctrl input[type=checkbox]:checked').length;
+  if (!checked) return alert('No slips checked to print. Check at least one slip above.');
+  window.print();
+});
+document.getElementById('back-btn').addEventListener('click', () => { document.getElementById('preview-section').style.display='none'; setStep(2); });
+
+function splitCSV(text) {
+  const rows=[]; let cur=[],field='',inQ=false;
+  for (let i=0;i<text.length;i++) {
+    const c=text[i];
+    if (c==='"') { if(inQ&&text[i+1]==='"'){field+='"';i++;}else inQ=!inQ; }
+    else if (c===','&&!inQ) { cur.push(field);field=''; }
+    else if ((c==='\n'||c==='\r')&&!inQ) {
+      if(c==='\r'&&text[i+1]==='\n')i++;
+      cur.push(field);field='';
+      if(cur.some(f=>f.trim()))rows.push(cur);cur=[];
+    } else field+=c;
+  }
+  if(field||cur.length){cur.push(field);if(cur.some(f=>f.trim()))rows.push(cur);}
+  return rows;
+}
+
+function pm(s)  { if(!s)return 0; const n=parseFloat(s.replace(/[^0-9.\-]/g,'')); return isNaN(n)?0:n; }
+function fmtDate(s) {
+  if(!s)return'—'; const m=s.match(/(\d{4})-(\d{2})-(\d{2})/);
+  if(!m)return s; return new Date(+m[1],+m[2]-1,+m[3]).toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'});
+}
+function fmt(n)    { return '$'+(n||0).toFixed(2); }
+function r2(n)     { return Math.round(n*100)/100; }
+function sum(arr,k){ return r2(arr.reduce((a,i)=>a+(i[k]||0),0)); }
+function esc(s)    { return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+function setStep(n){ ['s1','s2','s3'].forEach((id,i)=>{ document.getElementById(id).className='step'+(i+1<n?' done':i+1===n?' active':''); }); }
+</script>
+
+<script>
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('sw.js')
+      .then(r => console.log('SW registered'))
+      .catch(e => console.log('SW failed:', e));
+  });
+}
+</script>
+</body>
+</html>
