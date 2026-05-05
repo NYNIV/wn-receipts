@@ -41,11 +41,19 @@
     text-align: center; cursor: pointer; transition: all 0.2s; position: relative;
   }
   #drop-zone:hover, #drop-zone.over { border-color: var(--accent); background: rgba(245,200,66,0.03); }
-  #drop-zone input { position: absolute; inset: 0; opacity: 0; cursor: pointer; width: 100%; height: 100%; }
+  #drop-zone input[type=file] { display: none; }
   #drop-zone .icon { font-size: 32px; margin-bottom: 10px; display: block; }
   #drop-zone h2 { font-size: 14px; font-weight: 700; margin-bottom: 6px; }
   #drop-zone p  { font-size: 11px; color: var(--muted); }
   #drop-zone .hint { margin-top: 12px; font-size: 10px; color: var(--accent2); }
+  #browse-btn {
+    display: inline-block; margin-top: 16px;
+    background: var(--accent); color: #111;
+    font-family: 'IBM Plex Mono', monospace; font-size: 13px; font-weight: 700;
+    padding: 12px 28px; border-radius: 6px; cursor: pointer;
+    border: none; text-transform: uppercase; letter-spacing: 0.5px;
+  }
+  #browse-btn:active { opacity: 0.8; }
 
   #buyer-bar { display: none; background: var(--surface); border: 1px solid var(--border); border-radius: 7px; padding: 14px 16px; margin-bottom: 20px; }
   .buyer-bar-inner { display: flex; gap: 12px; align-items: flex-end; flex-wrap: wrap; }
@@ -172,13 +180,87 @@
       padding: 0 !important;
       width: 101.6mm;
     }
+    .slip-card {
+      page-break-after: always;
+      page-break-inside: avoid;
+      box-shadow: none;
+      border-radius: 0;
+      margin: 0 !important;
+      padding: 0 !important;
+      width: 101.6mm;
+      height: 152.4mm;
+      overflow: hidden;
+      display: flex;
+      align-items: flex-start;
+    }
     .slip {
       width: 101.6mm;
       margin: 0 !important;
-      padding: 3mm 4mm !important;
+      padding: 2mm 3mm !important;
+      transform-origin: top left;
+      font-size: 9px !important;
     }
+    .s-brand { font-size: 13px !important; }
+    .s-brand-sub, .s-meta, .s-lbl, .s-ref { font-size: 7.5px !important; }
+    .s-name { font-size: 10px !important; }
+    .s-item-title { font-size: 8.5px !important; }
+    .s-item-date, .s-item-refs { font-size: 7.5px !important; }
+    .s-line { font-size: 8.5px !important; padding: 0.5px 0 !important; }
+    .s-line.sub { font-size: 9px !important; }
+    .s-line.fee { font-size: 7.5px !important; }
+    .s-line.basis { font-size: 9.5px !important; }
+    .s-grand-lbl { font-size: 7px !important; }
+    .s-grand-final-lbl { font-size: 7.5px !important; }
+    .s-grand-final-amt { font-size: 16px !important; }
+    .s-footer { font-size: 6.5px !important; }
+    .s-header { padding-bottom: 3px !important; margin-bottom: 3px !important; }
+    .s-parties { padding-bottom: 2px !important; margin-bottom: 2px !important; }
+    .s-item { padding: 2px 5px !important; }
+    .s-item-top { margin-bottom: 1px !important; }
+    .s-item-refs { margin-bottom: 2px !important; padding-bottom: 2px !important; }
+    .s-grand { padding-top: 3px !important; }
+    .s-grand-final { margin-top: 3px !important; padding-top: 3px !important; }
+    .s-items-wrap { margin-bottom: 2px !important; }
+    .s-footer { margin-top: 3px !important; padding-top: 2px !important; }
     .no-print { display: none !important; }
   }
+
+  /* ── SEARCHABLE SELLER DROPDOWN ── */
+  .search-select { position: relative; display: inline-block; }
+  .search-select input {
+    background: var(--surface); border: 1px solid var(--border); border-radius: 6px;
+    color: var(--text); font-family: 'IBM Plex Mono', monospace; font-size: 11px;
+    padding: 7px 28px 7px 10px; cursor: pointer; min-width: 160px; width: 100%;
+  }
+  .search-select input:focus { outline: 1px solid var(--accent); }
+  .search-select .ss-arrow {
+    position: absolute; right: 8px; top: 50%; transform: translateY(-50%);
+    color: var(--muted); font-size: 10px; pointer-events: none;
+  }
+  .ss-dropdown {
+    display: none; position: absolute; top: calc(100% + 3px); left: 0;
+    background: var(--surface); border: 1px solid var(--accent);
+    border-radius: 6px; min-width: 220px; max-height: 280px;
+    overflow-y: auto; z-index: 999; box-shadow: 0 8px 24px rgba(0,0,0,0.5);
+  }
+  .ss-dropdown.open { display: block; }
+  .ss-search-wrap { padding: 8px 8px 4px; position: sticky; top: 0; background: var(--surface); border-bottom: 1px solid var(--border); }
+  .ss-search-wrap input {
+    width: 100%; background: var(--bg); border: 1px solid var(--border);
+    border-radius: 4px; color: var(--text); font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px; padding: 6px 8px;
+  }
+  .ss-search-wrap input:focus { outline: 1px solid var(--accent); }
+  .ss-option {
+    padding: 8px 12px; cursor: pointer; font-size: 11px;
+    font-family: 'IBM Plex Mono', monospace; color: var(--text);
+    border-bottom: 1px solid #1e1e1e; transition: background 0.1s;
+  }
+  .ss-option:last-child { border-bottom: none; }
+  .ss-option:hover, .ss-option.focused { background: rgba(245,200,66,0.1); color: var(--accent); }
+  .ss-option.selected { color: var(--accent); }
+  .ss-option.all-opt { color: var(--muted); font-style: italic; }
+  .ss-empty { padding: 10px 12px; font-size: 11px; color: var(--muted); font-style: italic; }
 
   /* ── TABLET / RESPONSIVE ── */
   @media (max-width: 600px) {
@@ -229,12 +311,13 @@
   </div>
 
   <div id="upload-section">
+    <input type="file" id="csv-input" accept=".csv,.CSV" style="display:none">
     <div id="drop-zone">
-      <input type="file" id="csv-input" accept=".csv">
       <span class="icon">📂</span>
-      <h2>Drop your Whatnot order CSV here</h2>
-      <p>or click to browse</p>
+      <h2>Select your Whatnot CSV</h2>
+      <p>Tap the button below or drop a file here</p>
       <div class="hint">order-report-*.csv · one slip per seller per purchase date</div>
+      <button id="browse-btn">Browse Files</button>
     </div>
   </div>
 
@@ -262,7 +345,16 @@
 
     <div class="controls">
       <input type="text" id="search" placeholder="Search item, seller, order ID…">
-      <select id="filter-seller"><option value="">All Sellers</option></select>
+      <div class="search-select" id="seller-select-wrap">
+        <input type="text" id="seller-display" placeholder="All Sellers" readonly>
+        <span class="ss-arrow">▾</span>
+        <div class="ss-dropdown" id="seller-dropdown">
+          <div class="ss-search-wrap">
+            <input type="text" id="seller-search" placeholder="Search sellers…" autocomplete="off">
+          </div>
+          <div id="seller-options"></div>
+        </div>
+      </div>
       <select id="filter-date"><option value="">All Dates</option></select>
       <button class="btn btn-ghost" id="sel-all-btn">Select All</button>
       <button class="btn btn-ghost" id="desel-all-btn">Deselect All</button>
@@ -317,10 +409,16 @@ let allItems = [], filtered = [], selected = new Set();
 // Upload
 const dz = document.getElementById('drop-zone');
 const fi = document.getElementById('csv-input');
+
+// Explicit button tap — works on Android PWA
+document.getElementById('browse-btn').addEventListener('click', () => fi.click());
+
+// Also allow tapping the drop zone itself on desktop
+dz.addEventListener('click', (e) => { if (e.target.id !== 'browse-btn') fi.click(); });
 dz.addEventListener('dragover',  e => { e.preventDefault(); dz.classList.add('over'); });
 dz.addEventListener('dragleave', () => dz.classList.remove('over'));
 dz.addEventListener('drop', e => { e.preventDefault(); dz.classList.remove('over'); load(e.dataTransfer.files[0]); });
-fi.addEventListener('change', e => load(e.target.files[0]));
+fi.addEventListener('change', e => { if (e.target.files[0]) load(e.target.files[0]); });
 
 function load(f) { if (!f) return; const r = new FileReader(); r.onload = e => ingest(e.target.result); r.readAsText(f); }
 
@@ -350,17 +448,68 @@ function ingest(text) {
   setStep(2);
 }
 
+// ── SEARCHABLE SELLER DROPDOWN ──
+let sellerValue = ''; // currently selected seller filter
+let allSellers  = [];
+
+function buildSellerDropdown(sellers) {
+  allSellers = sellers;
+  renderSellerOptions('');
+}
+
+function renderSellerOptions(query) {
+  const container = document.getElementById('seller-options');
+  const q = query.toLowerCase();
+  const matches = allSellers.filter(s => !q || s.toLowerCase().includes(q));
+  let html = `<div class="ss-option all-opt" data-val="">All Sellers</div>`;
+  html += matches.map(s =>
+    `<div class="ss-option${sellerValue===s?' selected':''}" data-val="${s}">@${s}</div>`
+  ).join('');
+  if (matches.length === 0) html += `<div class="ss-empty">No sellers found</div>`;
+  container.innerHTML = html;
+  container.querySelectorAll('.ss-option').forEach(opt => {
+    opt.addEventListener('click', () => {
+      sellerValue = opt.dataset.val;
+      document.getElementById('seller-display').value = sellerValue ? '@' + sellerValue : '';
+      document.getElementById('seller-display').placeholder = sellerValue ? '' : 'All Sellers';
+      closeSellerDropdown();
+      applyFilters();
+    });
+  });
+}
+
+function closeSellerDropdown() {
+  document.getElementById('seller-dropdown').classList.remove('open');
+  document.getElementById('seller-search').value = '';
+  renderSellerOptions('');
+}
+
+document.getElementById('seller-display').addEventListener('click', e => {
+  e.stopPropagation();
+  const dd = document.getElementById('seller-dropdown');
+  const isOpen = dd.classList.contains('open');
+  dd.classList.toggle('open', !isOpen);
+  if (!isOpen) setTimeout(() => document.getElementById('seller-search').focus(), 50);
+});
+
+document.getElementById('seller-search').addEventListener('input', e => {
+  renderSellerOptions(e.target.value);
+});
+
+document.getElementById('seller-search').addEventListener('click', e => e.stopPropagation());
+document.getElementById('seller-dropdown').addEventListener('click', e => e.stopPropagation());
+
+document.addEventListener('click', () => closeSellerDropdown());
+
 function buildFilters() {
   const sellers = [...new Set(allItems.map(i => i.seller))].sort();
   const dates   = [...new Set(allItems.map(i => i.dateKey))].sort().reverse();
-  document.getElementById('filter-seller').innerHTML =
-    '<option value="">All Sellers</option>' + sellers.map(s=>`<option value="${s}">@${s}</option>`).join('');
+  buildSellerDropdown(sellers);
   document.getElementById('filter-date').innerHTML =
     '<option value="">All Dates</option>' + dates.map(d=>`<option value="${d}">${fmtDate(d+'T00:00')}</option>`).join('');
 }
 
 document.getElementById('search').addEventListener('input', applyFilters);
-document.getElementById('filter-seller').addEventListener('change', applyFilters);
 document.getElementById('filter-date').addEventListener('change', applyFilters);
 
 function applyFilters() {
@@ -631,8 +780,30 @@ function buildSlip(group, buyerName, buyerHandle, buyerNote, today) {
 document.getElementById('print-btn').addEventListener('click', () => {
   const checked = document.querySelectorAll('.slip-ctrl input[type=checkbox]:checked').length;
   if (!checked) return alert('No slips checked to print. Check at least one slip above.');
-  window.print();
+  scaleSlipsToFit();
+  setTimeout(() => window.print(), 150);
 });
+
+function scaleSlipsToFit() {
+  // 152.4mm at 96dpi = ~576px, keep a little margin
+  const MAX_H_PX = 560;
+  const MAX_W_PX = 384;
+  document.querySelectorAll('#print-target .slip').forEach(slip => {
+    // Reset any previous scale
+    slip.style.transform = '';
+    slip.style.width = '';
+    const h = slip.scrollHeight;
+    const w = slip.scrollWidth;
+    if (h > MAX_H_PX || w > MAX_W_PX) {
+      const scaleH = MAX_H_PX / h;
+      const scaleW = MAX_W_PX / w;
+      const scale = Math.min(scaleH, scaleW, 1);
+      slip.style.transform = `scale(${scale.toFixed(3)})`;
+      slip.style.transformOrigin = 'top left';
+      slip.style.width = (MAX_W_PX / scale) + 'px';
+    }
+  });
+}
 document.getElementById('back-btn').addEventListener('click', () => { document.getElementById('preview-section').style.display='none'; setStep(2); });
 
 function splitCSV(text) {
