@@ -37,18 +37,36 @@
   .step.done   { border-color: var(--success); color: var(--success); background: rgba(76,175,120,0.06); }
 
   #drop-zone {
-    border: 2px dashed var(--border); border-radius: 8px; padding: 52px 32px;
-    text-align: center; cursor: pointer; transition: all 0.2s; position: relative;
-    overflow: hidden;
+    border: 2px dashed var(--border); border-radius: 8px; padding: 40px 32px;
+    text-align: center; transition: all 0.2s; position: relative;
   }
   #drop-zone:hover, #drop-zone.over { border-color: var(--accent); background: rgba(245,200,66,0.03); }
   #csv-input {
-    position: absolute;
-    left: 0; top: 0;
-    width: 100%; height: 100%;
-    opacity: 0;
+    display: block;
+    width: 100%;
+    margin: 16px auto 0;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 13px;
+    color: var(--text);
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 10px;
     cursor: pointer;
-    z-index: 2;
+  }
+  #csv-input::file-selector-button {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 12px;
+    font-weight: 700;
+    background: var(--accent);
+    color: #111;
+    border: none;
+    border-radius: 4px;
+    padding: 8px 16px;
+    margin-right: 12px;
+    cursor: pointer;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
   }
   #drop-zone .icon { font-size: 32px; margin-bottom: 10px; display: block; }
   #drop-zone h2 { font-size: 14px; font-weight: 700; margin-bottom: 6px; }
@@ -233,14 +251,38 @@
     .no-print { display: none !important; }
   }
 
+  /* ── BACK TO TOP BUTTON ── */
+  #back-to-top {
+    display: none;
+    position: fixed;
+    bottom: 24px;
+    right: 24px;
+    z-index: 999;
+    background: var(--accent);
+    color: #111;
+    border: none;
+    border-radius: 50%;
+    width: 48px;
+    height: 48px;
+    font-size: 20px;
+    cursor: pointer;
+    box-shadow: 0 4px 16px rgba(0,0,0,0.4);
+    transition: opacity 0.2s;
+    font-family: 'IBM Plex Mono', monospace;
+    font-weight: 700;
+    line-height: 1;
+  }
+  #back-to-top:hover { opacity: 0.85; }
+  #back-to-top.visible { display: flex; align-items: center; justify-content: center; }
+
   /* ── SEARCHABLE SELLER DROPDOWN ── */
-  .search-select { position: relative; display: inline-block; }
+  .search-select { position: relative; display: inline-block; min-width: 180px; }
   .search-select input {
     background: var(--surface); border: 1px solid var(--border); border-radius: 6px;
     color: var(--text); font-family: 'IBM Plex Mono', monospace; font-size: 11px;
-    padding: 7px 28px 7px 10px; cursor: pointer; min-width: 160px; width: 100%;
+    padding: 7px 28px 7px 10px; min-width: 160px; width: 100%;
   }
-  .search-select input:focus { outline: 1px solid var(--accent); }
+  .search-select input:focus { outline: 1px solid var(--accent); border-color: var(--accent); }
   .search-select .ss-arrow {
     position: absolute; right: 8px; top: 50%; transform: translateY(-50%);
     color: var(--muted); font-size: 10px; pointer-events: none;
@@ -248,25 +290,18 @@
   .ss-dropdown {
     display: none; position: absolute; top: calc(100% + 3px); left: 0;
     background: var(--surface); border: 1px solid var(--accent);
-    border-radius: 6px; min-width: 220px; max-height: 280px;
+    border-radius: 6px; min-width: 220px; max-height: 260px;
     overflow-y: auto; z-index: 999; box-shadow: 0 8px 24px rgba(0,0,0,0.5);
   }
   .ss-dropdown.open { display: block; }
-  .ss-search-wrap { padding: 8px 8px 4px; position: sticky; top: 0; background: var(--surface); border-bottom: 1px solid var(--border); }
-  .ss-search-wrap input {
-    width: 100%; background: var(--bg); border: 1px solid var(--border);
-    border-radius: 4px; color: var(--text); font-family: 'IBM Plex Mono', monospace;
-    font-size: 11px; padding: 6px 8px;
-  }
-  .ss-search-wrap input:focus { outline: 1px solid var(--accent); }
   .ss-option {
-    padding: 8px 12px; cursor: pointer; font-size: 11px;
+    padding: 9px 12px; cursor: pointer; font-size: 11px;
     font-family: 'IBM Plex Mono', monospace; color: var(--text);
     border-bottom: 1px solid #1e1e1e; transition: background 0.1s;
   }
   .ss-option:last-child { border-bottom: none; }
-  .ss-option:hover, .ss-option.focused { background: rgba(245,200,66,0.1); color: var(--accent); }
-  .ss-option.selected { color: var(--accent); }
+  .ss-option:hover { background: rgba(245,200,66,0.1); color: var(--accent); }
+  .ss-option.selected { color: var(--accent); font-weight: 700; }
   .ss-option.all-opt { color: var(--muted); font-style: italic; }
   .ss-empty { padding: 10px 12px; font-size: 11px; color: var(--muted); font-style: italic; }
 
@@ -322,10 +357,9 @@
     <div id="drop-zone">
       <span class="icon">📂</span>
       <h2>Select your Whatnot CSV</h2>
-      <p>Tap the button below to open your files</p>
+      <p>Tap "Choose File" below to import your order export</p>
       <div class="hint">order-report-*.csv · one slip per seller per purchase date</div>
-      <button id="browse-btn">Browse Files</button>
-      <input type="file" id="csv-input" accept=".csv,.CSV" style="position:absolute;left:0;top:0;width:100%;height:100%;opacity:0;cursor:pointer;z-index:2;">
+      <input type="file" id="csv-input" accept=".csv,.CSV">
     </div>
   </div>
 
@@ -354,12 +388,9 @@
     <div class="controls">
       <input type="text" id="search" placeholder="Search item, seller, order ID…">
       <div class="search-select" id="seller-select-wrap">
-        <input type="text" id="seller-display" placeholder="All Sellers" readonly>
+        <input type="text" id="seller-display" placeholder="All Sellers" autocomplete="off" spellcheck="false">
         <span class="ss-arrow">▾</span>
         <div class="ss-dropdown" id="seller-dropdown">
-          <div class="ss-search-wrap">
-            <input type="text" id="seller-search" placeholder="Search sellers…" autocomplete="off">
-          </div>
           <div id="seller-options"></div>
         </div>
       </div>
@@ -373,6 +404,7 @@
         <span class="section-lbl" style="margin:0">Imported Orders</span>
         <span class="sel-count" id="sel-count">0 selected</span>
         <span class="slip-badge" id="slip-count">0 slips</span>
+        <button class="btn btn-ghost" id="new-csv-btn" style="font-size:10px;padding:4px 10px;">↩ New CSV</button>
       </div>
       <button class="btn btn-primary" id="gen-btn">Generate Slips →</button>
     </div>
@@ -408,6 +440,7 @@
   </div>
 
 </div>
+<button id="back-to-top" class="no-print" title="Back to top">↑</button>
 <div id="print-target" style="display:none"></div>
 
 <script>
@@ -418,7 +451,7 @@ let allItems = [], filtered = [], selected = new Set();
 const dz = document.getElementById('drop-zone');
 const fi = document.getElementById('csv-input');
 
-// File input change — primary handler for all platforms
+// Straightforward change handler — no tricks
 fi.addEventListener('change', e => {
   if (e.target.files && e.target.files[0]) load(e.target.files[0]);
 });
@@ -430,31 +463,6 @@ dz.addEventListener('drop', e => {
   e.preventDefault();
   dz.classList.remove('over');
   if (e.dataTransfer.files[0]) load(e.dataTransfer.files[0]);
-});
-
-// Browse button — use File System Access API if available (Android Chrome), else fall back to input
-document.getElementById('browse-btn').addEventListener('click', async (e) => {
-  e.preventDefault();
-  e.stopPropagation();
-  if ('showOpenFilePicker' in window) {
-    try {
-      const [fileHandle] = await window.showOpenFilePicker({
-        types: [{ description: 'CSV Files', accept: { 'text/csv': ['.csv', '.CSV'] } }],
-        multiple: false
-      });
-      const file = await fileHandle.getFile();
-      load(file);
-    } catch (err) {
-      if (err.name !== 'AbortError') {
-        // Fallback to regular input if picker fails
-        fi.value = '';
-        fi.click();
-      }
-    }
-  } else {
-    fi.value = '';
-    fi.click();
-  }
 });
 
 function load(f) { if (!f) return; const r = new FileReader(); r.onload = e => ingest(e.target.result); r.readAsText(f); }
@@ -482,11 +490,14 @@ function ingest(text) {
   buildFilters(); renderStats(); renderTable();
   document.getElementById('buyer-bar').style.display = 'block';
   document.getElementById('items-section').style.display = 'block';
+  document.getElementById('upload-section').style.display = 'none';
+  document.getElementById('preview-section').style.display = 'none';
   setStep(2);
+  window.scrollTo({ top: 0, behavior: 'smooth' });
 }
 
 // ── SEARCHABLE SELLER DROPDOWN ──
-let sellerValue = ''; // currently selected seller filter
+let sellerValue = '';
 let allSellers  = [];
 
 function buildSellerDropdown(sellers) {
@@ -502,41 +513,51 @@ function renderSellerOptions(query) {
   html += matches.map(s =>
     `<div class="ss-option${sellerValue===s?' selected':''}" data-val="${s}">@${s}</div>`
   ).join('');
-  if (matches.length === 0) html += `<div class="ss-empty">No sellers found</div>`;
+  if (!matches.length) html += `<div class="ss-empty">No sellers found</div>`;
   container.innerHTML = html;
   container.querySelectorAll('.ss-option').forEach(opt => {
-    opt.addEventListener('click', () => {
+    opt.addEventListener('mousedown', e => {
+      // mousedown fires before blur — lets us capture the click before dropdown closes
+      e.preventDefault();
       sellerValue = opt.dataset.val;
-      document.getElementById('seller-display').value = sellerValue ? '@' + sellerValue : '';
-      document.getElementById('seller-display').placeholder = sellerValue ? '' : 'All Sellers';
-      closeSellerDropdown();
+      const disp = document.getElementById('seller-display');
+      disp.value = sellerValue ? '@' + sellerValue : '';
+      document.getElementById('seller-dropdown').classList.remove('open');
       applyFilters();
     });
   });
 }
 
 function closeSellerDropdown() {
+  const disp = document.getElementById('seller-display');
   document.getElementById('seller-dropdown').classList.remove('open');
-  document.getElementById('seller-search').value = '';
-  renderSellerOptions('');
+  // Restore display value to selected seller (clears partial search text)
+  disp.value = sellerValue ? '@' + sellerValue : '';
 }
 
-document.getElementById('seller-display').addEventListener('click', e => {
-  e.stopPropagation();
-  const dd = document.getElementById('seller-dropdown');
-  const isOpen = dd.classList.contains('open');
-  dd.classList.toggle('open', !isOpen);
-  if (!isOpen) setTimeout(() => document.getElementById('seller-search').focus(), 50);
+const sellerDisplay = document.getElementById('seller-display');
+
+sellerDisplay.addEventListener('focus', () => {
+  sellerDisplay.value = '';  // clear so user can type fresh
+  renderSellerOptions('');
+  document.getElementById('seller-dropdown').classList.add('open');
 });
 
-document.getElementById('seller-search').addEventListener('input', e => {
+sellerDisplay.addEventListener('input', e => {
   renderSellerOptions(e.target.value);
+  document.getElementById('seller-dropdown').classList.add('open');
 });
 
-document.getElementById('seller-search').addEventListener('click', e => e.stopPropagation());
-document.getElementById('seller-dropdown').addEventListener('click', e => e.stopPropagation());
+sellerDisplay.addEventListener('blur', () => {
+  // Small delay so mousedown on an option fires first
+  setTimeout(closeSellerDropdown, 150);
+});
 
-document.addEventListener('click', () => closeSellerDropdown());
+document.addEventListener('click', e => {
+  if (!document.getElementById('seller-select-wrap').contains(e.target)) {
+    closeSellerDropdown();
+  }
+});
 
 function buildFilters() {
   const sellers = [...new Set(allItems.map(i => i.seller))].sort();
@@ -551,11 +572,10 @@ document.getElementById('filter-date').addEventListener('change', applyFilters);
 
 function applyFilters() {
   const q = document.getElementById('search').value.toLowerCase();
-  const s = document.getElementById('filter-seller').value;
   const d = document.getElementById('filter-date').value;
   filtered = allItems.filter(i => {
     const mQ = !q || [i.name,i.seller,i.orderNum,i.orderId].some(v=>v.toLowerCase().includes(q));
-    return mQ && (!s||i.seller===s) && (!d||i.dateKey===d);
+    return mQ && (!sellerValue || i.seller === sellerValue) && (!d || i.dateKey === d);
   });
   renderTable();
 }
@@ -646,8 +666,10 @@ document.getElementById('sel-all-btn').addEventListener('click', () => { filtere
 document.getElementById('desel-all-btn').addEventListener('click', () => { filtered.forEach(i=>selected.delete(i.id)); renderTable(); renderStats(); });
 
 document.getElementById('gen-btn').addEventListener('click', () => {
-  const items = allItems.filter(i=>selected.has(i.id));
-  if (!items.length) return alert('Select at least one item.');
+  // Only generate for items that are checked AND visible in current filtered view
+  const filteredIds = new Set(filtered.map(i => i.id));
+  const items = allItems.filter(i => selected.has(i.id) && filteredIds.has(i.id));
+  if (!items.length) return alert('No selected items in current view. Check your filters or select some items.');
 
   const groups = {};
   items.forEach(item => {
@@ -841,7 +863,42 @@ function scaleSlipsToFit() {
     }
   });
 }
-document.getElementById('back-btn').addEventListener('click', () => { document.getElementById('preview-section').style.display='none'; setStep(2); });
+document.getElementById('back-btn').addEventListener('click', () => {
+  // Hide preview, go back to table — keep selections intact so user can adjust and reprint
+  document.getElementById('preview-section').style.display = 'none';
+  // Scroll back to items section
+  document.getElementById('items-section').scrollIntoView({ behavior: 'smooth' });
+  setStep(2);
+});
+
+document.getElementById('new-csv-btn').addEventListener('click', () => {
+  // Full reset — clear all state and go back to upload
+  allItems = []; filtered = []; selected = new Set(); sellerValue = ''; allSellers = [];
+  document.getElementById('items-section').style.display = 'none';
+  document.getElementById('preview-section').style.display = 'none';
+  document.getElementById('buyer-bar').style.display = 'none';
+  document.getElementById('upload-section').style.display = 'block';
+  document.getElementById('tbl-body').innerHTML = '';
+  document.getElementById('stats-bar').innerHTML = '';
+  document.getElementById('slips-grid').innerHTML = '';
+  document.getElementById('seller-display').value = '';
+  document.getElementById('seller-display').placeholder = 'All Sellers';
+  document.getElementById('filter-date').innerHTML = '<option value="">All Dates</option>';
+  document.getElementById('search').value = '';
+  fi.value = '';
+  setStep(1);
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+});
+
+// Back to top button visibility
+window.addEventListener('scroll', () => {
+  const btn = document.getElementById('back-to-top');
+  if (window.scrollY > 300) btn.classList.add('visible');
+  else btn.classList.remove('visible');
+});
+document.getElementById('back-to-top').addEventListener('click', () => {
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+});
 
 function splitCSV(text) {
   const rows=[]; let cur=[],field='',inQ=false;
