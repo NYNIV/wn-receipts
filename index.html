@@ -492,6 +492,7 @@ function ingest(text) {
   document.getElementById('items-section').style.display = 'block';
   document.getElementById('upload-section').style.display = 'none';
   document.getElementById('preview-section').style.display = 'none';
+  initSellerDropdown(); // bind now that the element is visible
   setStep(2);
   window.scrollTo({ top: 0, behavior: 'smooth' });
 }
@@ -535,12 +536,20 @@ function closeSellerDropdown() {
   disp.value = sellerValue ? '@' + sellerValue : '';
 }
 
-// Seller dropdown events — run immediately, element exists in DOM at this point
-(function initSellerDropdown() {
+// Seller dropdown events — called after items-section becomes visible
+function initSellerDropdown() {
   const sellerDisplay = document.getElementById('seller-display');
-  if (!sellerDisplay) return;
+  if (!sellerDisplay || sellerDisplay._init) return;
+  sellerDisplay._init = true; // prevent double-binding
 
   sellerDisplay.addEventListener('focus', () => {
+    sellerDisplay.value = '';
+    renderSellerOptions('');
+    document.getElementById('seller-dropdown').classList.add('open');
+  });
+
+  sellerDisplay.addEventListener('click', e => {
+    e.stopPropagation();
     sellerDisplay.value = '';
     renderSellerOptions('');
     document.getElementById('seller-dropdown').classList.add('open');
@@ -559,7 +568,7 @@ function closeSellerDropdown() {
     const wrap = document.getElementById('seller-select-wrap');
     if (wrap && !wrap.contains(e.target)) closeSellerDropdown();
   });
-})();
+}
 
 function buildFilters() {
   const sellers = [...new Set(allItems.map(i => i.seller))].sort();
