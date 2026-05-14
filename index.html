@@ -535,28 +535,29 @@ function closeSellerDropdown() {
   disp.value = sellerValue ? '@' + sellerValue : '';
 }
 
-const sellerDisplay = document.getElementById('seller-display');
+document.addEventListener('DOMContentLoaded', () => {
+  const sellerDisplay = document.getElementById('seller-display');
+  if (!sellerDisplay) return;
 
-sellerDisplay.addEventListener('focus', () => {
-  sellerDisplay.value = '';  // clear so user can type fresh
-  renderSellerOptions('');
-  document.getElementById('seller-dropdown').classList.add('open');
-});
+  sellerDisplay.addEventListener('focus', () => {
+    sellerDisplay.value = '';
+    renderSellerOptions('');
+    document.getElementById('seller-dropdown').classList.add('open');
+  });
 
-sellerDisplay.addEventListener('input', e => {
-  renderSellerOptions(e.target.value);
-  document.getElementById('seller-dropdown').classList.add('open');
-});
+  sellerDisplay.addEventListener('input', e => {
+    renderSellerOptions(e.target.value);
+    document.getElementById('seller-dropdown').classList.add('open');
+  });
 
-sellerDisplay.addEventListener('blur', () => {
-  // Small delay so mousedown on an option fires first
-  setTimeout(closeSellerDropdown, 150);
-});
+  sellerDisplay.addEventListener('blur', () => {
+    setTimeout(closeSellerDropdown, 150);
+  });
 
-document.addEventListener('click', e => {
-  if (!document.getElementById('seller-select-wrap').contains(e.target)) {
-    closeSellerDropdown();
-  }
+  document.addEventListener('click', e => {
+    const wrap = document.getElementById('seller-select-wrap');
+    if (wrap && !wrap.contains(e.target)) closeSellerDropdown();
+  });
 });
 
 function buildFilters() {
