@@ -535,7 +535,8 @@ function closeSellerDropdown() {
   disp.value = sellerValue ? '@' + sellerValue : '';
 }
 
-document.addEventListener('DOMContentLoaded', () => {
+// Seller dropdown events — run immediately, element exists in DOM at this point
+(function initSellerDropdown() {
   const sellerDisplay = document.getElementById('seller-display');
   if (!sellerDisplay) return;
 
@@ -558,7 +559,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const wrap = document.getElementById('seller-select-wrap');
     if (wrap && !wrap.contains(e.target)) closeSellerDropdown();
   });
-});
+})();
 
 function buildFilters() {
   const sellers = [...new Set(allItems.map(i => i.seller))].sort();
