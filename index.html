@@ -539,34 +539,48 @@ function closeSellerDropdown() {
 // Seller dropdown events — called after items-section becomes visible
 function initSellerDropdown() {
   const sellerDisplay = document.getElementById('seller-display');
+  const dropdown = document.getElementById('seller-dropdown');
+  const wrap = document.getElementById('seller-select-wrap');
   if (!sellerDisplay || sellerDisplay._init) return;
-  sellerDisplay._init = true; // prevent double-binding
+  sellerDisplay._init = true;
 
-  sellerDisplay.addEventListener('focus', () => {
+  let isOpen = false;
+
+  function openDropdown() {
     sellerDisplay.value = '';
     renderSellerOptions('');
-    document.getElementById('seller-dropdown').classList.add('open');
-  });
+    dropdown.classList.add('open');
+    isOpen = true;
+  }
+
+  function closeDropdown() {
+    dropdown.classList.remove('open');
+    sellerDisplay.value = sellerValue ? '@' + sellerValue : '';
+    isOpen = false;
+  }
+
+  // Override the module-level close function
+  closeSellerDropdown = closeDropdown;
 
   sellerDisplay.addEventListener('click', e => {
     e.stopPropagation();
-    sellerDisplay.value = '';
-    renderSellerOptions('');
-    document.getElementById('seller-dropdown').classList.add('open');
+    if (isOpen) { closeDropdown(); } else { openDropdown(); }
   });
 
   sellerDisplay.addEventListener('input', e => {
     renderSellerOptions(e.target.value);
-    document.getElementById('seller-dropdown').classList.add('open');
+    dropdown.classList.add('open');
+    isOpen = true;
   });
 
   sellerDisplay.addEventListener('blur', () => {
-    setTimeout(closeSellerDropdown, 150);
+    setTimeout(closeDropdown, 200);
   });
 
-  document.addEventListener('click', e => {
-    const wrap = document.getElementById('seller-select-wrap');
-    if (wrap && !wrap.contains(e.target)) closeSellerDropdown();
+  wrap.addEventListener('click', e => e.stopPropagation());
+
+  document.addEventListener('click', () => {
+    if (isOpen) closeDropdown();
   });
 }
 
