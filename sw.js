@@ -1,4 +1,4 @@
-const CACHE = 'wn-receipts-v1';
+const CACHE = 'wn-receipts-v3';
 const ASSETS = [
   './',
   './index.html',
@@ -14,34 +14,50 @@ self.addEventListener('install', e => {
   self.skipWaiting();
 });
 
-// Activate — clean up old caches
+// Activate — delete ALL old caches immediately
 self.addEventListener('activate', e => {
   e.waitUntil(
     caches.keys().then(keys =>
-      Promise.all(keys.filter(k => k !== CACHE).map(k => caches.delete(k)))
+      Promise.all(keys.filter(k => k !== CACHE).map(k => {
+        console.log('Deleting old cache:', k);
+        return caches.delete(k);
+      }))
     )
   );
   self.clients.claim();
 });
 
-// Fetch — serve from cache, fall back to network
+// Fetch — network first for HTML, cache first for everything else
 self.addEventListener('fetch', e => {
-  e.respondWith(
-    caches.match(e.request).then(cached => {
-      if (cached) return cached;
-      return fetch(e.request).then(response => {
-        // Cache successful GET requests
-        if (e.request.method === 'GET' && response.status === 200) {
+  const url = new URL(e.request.url);
+  const isHTML = e.request.mode === 'navigate' || url.pathname.endsWith('.html') || url.pathname.endsWith('/');
+
+  if (isHTML) {
+    // Always try network first for HTML so updates are picked up immediately
+    e.respondWith(
+      fetch(e.request).then(response => {
+        if (response.status === 200) {
           const clone = response.clone();
           caches.open(CACHE).then(cache => cache.put(e.request, clone));
         }
         return response;
       }).catch(() => {
-        // Offline fallback for navigation requests
-        if (e.request.mode === 'navigate') {
-          return caches.match('./index.html');
-        }
-      });
-    })
-  );
+        return caches.match('./index.html');
+      })
+    );
+  } else {
+    // Cache first for assets (icons, fonts, etc)
+    e.respondWith(
+      caches.match(e.request).then(cached => {
+        if (cached) return cached;
+        return fetch(e.request).then(response => {
+          if (e.request.method === 'GET' && response.status === 200) {
+            const clone = response.clone();
+            caches.open(CACHE).then(cache => cache.put(e.request, clone));
+          }
+          return response;
+        });
+      })
+    );
+  }
 });
