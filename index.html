@@ -275,35 +275,19 @@
   #back-to-top:hover { opacity: 0.85; }
   #back-to-top.visible { display: flex; align-items: center; justify-content: center; }
 
-  /* ── SEARCHABLE SELLER DROPDOWN ── */
-  .search-select { position: relative; display: inline-block; min-width: 180px; }
-  .search-select input {
+  /* ── SELLER FILTER ── */
+  #seller-search-input {
     background: var(--surface); border: 1px solid var(--border); border-radius: 6px;
     color: var(--text); font-family: 'IBM Plex Mono', monospace; font-size: 11px;
-    padding: 7px 28px 7px 10px; min-width: 160px; width: 100%;
+    padding: 7px 10px; min-width: 140px;
   }
-  .search-select input:focus { outline: 1px solid var(--accent); border-color: var(--accent); }
-  .search-select .ss-arrow {
-    position: absolute; right: 8px; top: 50%; transform: translateY(-50%);
-    color: var(--muted); font-size: 10px; pointer-events: none;
+  #seller-search-input:focus { outline: 1px solid var(--accent); }
+  #filter-seller {
+    background: var(--surface); border: 1px solid var(--border); border-radius: 6px;
+    color: var(--text); font-family: 'IBM Plex Mono', monospace; font-size: 11px;
+    padding: 7px 10px; min-width: 160px; max-width: 200px;
   }
-  .ss-dropdown {
-    display: none; position: absolute; top: calc(100% + 3px); left: 0;
-    background: var(--surface); border: 1px solid var(--accent);
-    border-radius: 6px; min-width: 220px; max-height: 260px;
-    overflow-y: auto; z-index: 999; box-shadow: 0 8px 24px rgba(0,0,0,0.5);
-  }
-  .ss-dropdown.open { display: block; }
-  .ss-option {
-    padding: 9px 12px; cursor: pointer; font-size: 11px;
-    font-family: 'IBM Plex Mono', monospace; color: var(--text);
-    border-bottom: 1px solid #1e1e1e; transition: background 0.1s;
-  }
-  .ss-option:last-child { border-bottom: none; }
-  .ss-option:hover { background: rgba(245,200,66,0.1); color: var(--accent); }
-  .ss-option.selected { color: var(--accent); font-weight: 700; }
-  .ss-option.all-opt { color: var(--muted); font-style: italic; }
-  .ss-empty { padding: 10px 12px; font-size: 11px; color: var(--muted); font-style: italic; }
+  #filter-seller:focus { outline: 1px solid var(--accent); }
 
   /* ── TABLET / RESPONSIVE ── */
   @media (max-width: 600px) {
@@ -387,13 +371,8 @@
 
     <div class="controls">
       <input type="text" id="search" placeholder="Search item, seller, order ID…">
-      <div class="search-select" id="seller-select-wrap">
-        <input type="text" id="seller-display" placeholder="All Sellers" autocomplete="off" spellcheck="false">
-        <span class="ss-arrow">▾</span>
-        <div class="ss-dropdown" id="seller-dropdown">
-          <div id="seller-options"></div>
-        </div>
-      </div>
+      <input type="text" id="seller-search-input" placeholder="Search seller…" autocomplete="off">
+      <select id="filter-seller"><option value="">All Sellers</option></select>
       <select id="filter-date"><option value="">All Dates</option></select>
       <button class="btn btn-ghost" id="sel-all-btn">Select All</button>
       <button class="btn btn-ghost" id="desel-all-btn">Deselect All</button>
@@ -497,90 +476,43 @@ function ingest(text) {
   window.scrollTo({ top: 0, behavior: 'smooth' });
 }
 
-// ── SEARCHABLE SELLER DROPDOWN ──
+// ── SELLER FILTER ──
 let sellerValue = '';
 let allSellers  = [];
 
 function buildSellerDropdown(sellers) {
   allSellers = sellers;
-  renderSellerOptions('');
+  populateSellerSelect('');
 }
 
-function renderSellerOptions(query) {
-  const container = document.getElementById('seller-options');
+function populateSellerSelect(query) {
+  const sel = document.getElementById('filter-seller');
   const q = query.toLowerCase();
   const matches = allSellers.filter(s => !q || s.toLowerCase().includes(q));
-  let html = `<div class="ss-option all-opt" data-val="">All Sellers</div>`;
-  html += matches.map(s =>
-    `<div class="ss-option${sellerValue===s?' selected':''}" data-val="${s}">@${s}</div>`
-  ).join('');
-  if (!matches.length) html += `<div class="ss-empty">No sellers found</div>`;
-  container.innerHTML = html;
-  container.querySelectorAll('.ss-option').forEach(opt => {
-    opt.addEventListener('mousedown', e => {
-      // mousedown fires before blur — lets us capture the click before dropdown closes
-      e.preventDefault();
-      sellerValue = opt.dataset.val;
-      const disp = document.getElementById('seller-display');
-      disp.value = sellerValue ? '@' + sellerValue : '';
-      document.getElementById('seller-dropdown').classList.remove('open');
-      applyFilters();
-    });
-  });
+  sel.innerHTML = '<option value="">All Sellers</option>' +
+    matches.map(s => `<option value="${s}"${sellerValue===s?' selected':''}">@${s}</option>`).join('');
 }
 
-function closeSellerDropdown() {
-  const disp = document.getElementById('seller-display');
-  document.getElementById('seller-dropdown').classList.remove('open');
-  // Restore display value to selected seller (clears partial search text)
-  disp.value = sellerValue ? '@' + sellerValue : '';
-}
-
-// Seller dropdown events — called after items-section becomes visible
 function initSellerDropdown() {
-  const sellerDisplay = document.getElementById('seller-display');
-  const dropdown = document.getElementById('seller-dropdown');
-  const wrap = document.getElementById('seller-select-wrap');
-  if (!sellerDisplay || sellerDisplay._init) return;
-  sellerDisplay._init = true;
+  const searchInput = document.getElementById('seller-search-input');
+  const sel = document.getElementById('filter-seller');
+  if (!searchInput || searchInput._init) return;
+  searchInput._init = true;
 
-  let isOpen = false;
-
-  function openDropdown() {
-    sellerDisplay.value = '';
-    renderSellerOptions('');
-    dropdown.classList.add('open');
-    isOpen = true;
-  }
-
-  function closeDropdown() {
-    dropdown.classList.remove('open');
-    sellerDisplay.value = sellerValue ? '@' + sellerValue : '';
-    isOpen = false;
-  }
-
-  // Override the module-level close function
-  closeSellerDropdown = closeDropdown;
-
-  sellerDisplay.addEventListener('click', e => {
-    e.stopPropagation();
-    if (isOpen) { closeDropdown(); } else { openDropdown(); }
+  searchInput.addEventListener('input', e => {
+    populateSellerSelect(e.target.value);
+    // auto-select if only one match
+    const opts = sel.querySelectorAll('option:not([value=""])');
+    if (opts.length === 1) {
+      sel.value = opts[0].value;
+      sellerValue = sel.value;
+      applyFilters();
+    }
   });
 
-  sellerDisplay.addEventListener('input', e => {
-    renderSellerOptions(e.target.value);
-    dropdown.classList.add('open');
-    isOpen = true;
-  });
-
-  sellerDisplay.addEventListener('blur', () => {
-    setTimeout(closeDropdown, 200);
-  });
-
-  wrap.addEventListener('click', e => e.stopPropagation());
-
-  document.addEventListener('click', () => {
-    if (isOpen) closeDropdown();
+  sel.addEventListener('change', e => {
+    sellerValue = e.target.value;
+    applyFilters();
   });
 }
 
@@ -594,6 +526,10 @@ function buildFilters() {
 
 document.getElementById('search').addEventListener('input', applyFilters);
 document.getElementById('filter-date').addEventListener('change', applyFilters);
+document.getElementById('filter-seller').addEventListener('change', e => {
+  sellerValue = e.target.value;
+  applyFilters();
+});
 
 function applyFilters() {
   const q = document.getElementById('search').value.toLowerCase();
@@ -906,8 +842,8 @@ document.getElementById('new-csv-btn').addEventListener('click', () => {
   document.getElementById('tbl-body').innerHTML = '';
   document.getElementById('stats-bar').innerHTML = '';
   document.getElementById('slips-grid').innerHTML = '';
-  document.getElementById('seller-display').value = '';
-  document.getElementById('seller-display').placeholder = 'All Sellers';
+  document.getElementById('seller-search-input').value = '';
+  document.getElementById('filter-seller').innerHTML = '<option value="">All Sellers</option>';
   document.getElementById('filter-date').innerHTML = '<option value="">All Dates</option>';
   document.getElementById('search').value = '';
   fi.value = '';
