@@ -183,7 +183,7 @@
   .slip-card.excluded { opacity: 0.35; filter: grayscale(0.5); }
 
   @page {
-    size: 101.6mm 152.4mm;
+    size: 101.6mm auto;
     margin: 0mm;
   }
 
@@ -208,7 +208,6 @@
       width: 101.6mm;
       margin: 0 !important;
       padding: 2mm 3mm !important;
-      transform-origin: top left;
       font-size: 9px !important;
     }
     .s-brand { font-size: 13px !important; }
@@ -785,30 +784,8 @@ function buildSlip(group, buyerName, buyerHandle, buyerNote, today) {
 document.getElementById('print-btn').addEventListener('click', () => {
   const checked = document.querySelectorAll('.slip-ctrl input[type=checkbox]:checked').length;
   if (!checked) return alert('No slips checked to print. Check at least one slip above.');
-  scaleSlipsToFit();
-  setTimeout(() => window.print(), 150);
+  window.print();
 });
-
-function scaleSlipsToFit() {
-  // 152.4mm at 96dpi = ~576px, keep a little margin
-  const MAX_H_PX = 560;
-  const MAX_W_PX = 384;
-  document.querySelectorAll('#print-target .slip').forEach(slip => {
-    // Reset any previous scale
-    slip.style.transform = '';
-    slip.style.width = '';
-    const h = slip.scrollHeight;
-    const w = slip.scrollWidth;
-    if (h > MAX_H_PX || w > MAX_W_PX) {
-      const scaleH = MAX_H_PX / h;
-      const scaleW = MAX_W_PX / w;
-      const scale = Math.min(scaleH, scaleW, 1);
-      slip.style.transform = `scale(${scale.toFixed(3)})`;
-      slip.style.transformOrigin = 'top left';
-      slip.style.width = (MAX_W_PX / scale) + 'px';
-    }
-  });
-}
 document.getElementById('back-btn').addEventListener('click', () => {
   // Hide preview, go back to table — keep selections intact so user can adjust and reprint
   document.getElementById('preview-section').style.display = 'none';
