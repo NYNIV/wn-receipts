@@ -359,6 +359,8 @@
       <input type="text" id="seller-search-input" placeholder="Search seller…" autocomplete="off">
       <select id="filter-seller"><option value="">All Sellers</option></select>
       <select id="filter-date"><option value="">All Dates</option></select>
+      <button class="btn btn-ghost" id="sort-name-btn" title="Sort by seller name">Sort: Name ↕</button>
+      <button class="btn btn-ghost" id="sort-date-btn" title="Sort by date">Sort: Date ↕</button>
       <button class="btn btn-ghost" id="sel-all-btn">Select All</button>
       <button class="btn btn-ghost" id="desel-all-btn">Deselect All</button>
     </div>
@@ -410,6 +412,7 @@
 <script>
 const FEE = 0.13;
 let allItems = [], filtered = [], selected = new Set();
+let sortKey = 'name', sortDir = 1;
 
 // Upload
 const dz = document.getElementById('drop-zone');
@@ -547,8 +550,13 @@ function renderTable() {
   const tbody = document.getElementById('tbl-body');
   tbody.innerHTML = '';
   const sorted = [...filtered].sort((a,b) => {
-    if (a.seller !== b.seller) return a.seller.localeCompare(b.seller);
-    return b.dateKey.localeCompare(a.dateKey);
+    if (sortKey === 'date') {
+      const d = b.dateKey.localeCompare(a.dateKey) * sortDir;
+      return d !== 0 ? d : a.seller.localeCompare(b.seller);
+    } else {
+      const n = a.seller.localeCompare(b.seller) * sortDir;
+      return n !== 0 ? n : b.dateKey.localeCompare(a.dateKey);
+    }
   });
   let lastGroup = null;
   sorted.forEach(item => {
@@ -598,6 +606,7 @@ function renderTable() {
     tbody.appendChild(tr);
   });
   updateCount();
+  updateSortButtons();
 }
 
 function updateCount() {
@@ -610,6 +619,27 @@ function updateCount() {
 
 document.getElementById('sel-all-btn').addEventListener('click', () => { filtered.forEach(i=>selected.add(i.id)); renderTable(); renderStats(); });
 document.getElementById('desel-all-btn').addEventListener('click', () => { filtered.forEach(i=>selected.delete(i.id)); renderTable(); renderStats(); });
+
+function updateSortButtons() {
+  const nb = document.getElementById('sort-name-btn');
+  const db = document.getElementById('sort-date-btn');
+  if (!nb || !db) return;
+  nb.textContent = 'Sort: Name ' + (sortKey==='name' ? (sortDir===1?'A→Z':'Z→A') : '↕');
+  db.textContent = 'Sort: Date ' + (sortKey==='date' ? (sortDir===1?'Old→New':'New→Old') : '↕');
+  nb.style.borderColor = sortKey==='name' ? 'var(--accent)' : '';
+  nb.style.color       = sortKey==='name' ? 'var(--accent)' : '';
+  db.style.borderColor = sortKey==='date' ? 'var(--accent)' : '';
+  db.style.color       = sortKey==='date' ? 'var(--accent)' : '';
+}
+
+document.getElementById('sort-name-btn').addEventListener('click', () => {
+  if (sortKey === 'name') sortDir *= -1; else { sortKey = 'name'; sortDir = 1; }
+  updateSortButtons(); renderTable();
+});
+document.getElementById('sort-date-btn').addEventListener('click', () => {
+  if (sortKey === 'date') sortDir *= -1; else { sortKey = 'date'; sortDir = -1; }
+  updateSortButtons(); renderTable();
+});
 
 document.getElementById('gen-btn').addEventListener('click', () => {
   // Only generate for items that are checked AND visible in current filtered view
